@@ -24,6 +24,11 @@ app.use(
   })
 );
 
+app.get("/", (req, res) => {
+  res.send("Commercial AI Safety API");
+});
+
+
 // Inngest endpoint
 app.use("/api/inngest", serve({ client: inngest, functions }));
 
