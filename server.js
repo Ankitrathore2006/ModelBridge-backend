@@ -10,6 +10,9 @@ const app = express();
 app.use(express.json());
 
 connectDB();
+app.get("/api", (req, res) => {
+  res.send("API is running...");
+});
 
 // Routes
 app.use("/api/inngest", serve({ client: inngest, functions }));
