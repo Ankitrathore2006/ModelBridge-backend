@@ -5,9 +5,10 @@ import cors from "cors";
 import path from "path";
 import { serve } from "inngest/express";
 
-import { inngest, functions } from "./inngest/index.js";
-import { connectDB } from "./lib/db.js";
-import authRoutes from "./routes/auth.route.js";
+import { inngest, functions } from "./src/inngest/index.js";
+import { connectDB } from "./src/lib/db.js";
+import authRoutes from "./src/routes/auth.route.js";
+import { validateClient, detectSafetyIssues, generateLLMResponse, performSafetyAction, logRequest } from "./src/inngest/functions.js";
 
 dotenv.config();
 const app = express();
@@ -52,8 +53,7 @@ app.post("/api/v1/chat", async (req, res) => {
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
 
-    // Import the helper functions directly
-    const { validateClient, detectSafetyIssues, generateLLMResponse, performSafetyAction, logRequest } = await import("./inngest/functions.js");
+    // Helper functions are already imported at the top
 
     // Step 1: Validate API Key and Client
     const clientValidation = await validateClient(apiKey, clientId);
