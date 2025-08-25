@@ -7,7 +7,7 @@
  * Run it with: node test-api.js
  */
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://localhost:8000';
 const API_KEY = 'sk-1234567890abcdef';
 const CLIENT_ID = 'client_123';
 

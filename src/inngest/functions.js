@@ -2,6 +2,7 @@ import { DETECTOR_PROMPT } from "./prompt.js";
 import { inngest } from "./client.js";
 import { rules } from "./rules.js";
 import Log from "../models/log.model.js";
+import apiKeyModel from "../models/apiKey.model.js";
 
 // ============================================================
 // Main Chat Processing Function - Commercial API Service
@@ -190,37 +191,43 @@ export const safetyDetector = inngest.createFunction(
 // Validate API key and client
 export async function validateClient(apiKey, clientId) {
   try {
-    // This would query your database for valid clients
-    const validClients = {
-      "client_123": {
-        apiKey: "sk-1234567890abcdef",
-        name: "ChatBot Inc",
-        plan: "premium",
-        rate_limit: 1000,
-        client_config: {
-          llm_model: "gemini-2.5-flash",
-          max_tokens: 1000,
-          temperature: 0.7
-        }
-      }
-    };
-
-    const client = validClients[clientId];
-    if (client && client.apiKey === apiKey) {
+    // ✅ Query DB for the API key
+    const res = await apiKeyModel.findOne({ key: apiKey });
+    if (!res) {
       return {
-        valid: true,
-        client_config: client.client_config,
-        client_info: {
-          id: clientId,
-          name: client.name,
-          plan: client.plan
-        }
+        valid: false,
+        api_config: "NOT VALID"
       };
     }
 
-    return { valid: false };
+    // ✅ Compare clientId with stored createdBy
+    if (res.createdBy.toString() !== clientId) {
+      return {
+        valid: false,
+        api_config: "CLIENT ID MISMATCH"
+      };
+    }
+
+    // ✅ Build response from DB
+    return {
+      valid: true,
+      client_config: {
+        llm_model: res.llm_model || "gemini-2.5-flash",
+        max_tokens: res.max_tokens || 1000,
+        temperature: res.temperature || 0.7
+      },
+      client_info: {
+        id: res.createdBy,
+        name: res.clientName || "ChatBot Inc",
+        plan: res.plan || "free",
+        rate_limit: res.rate_limit || 1000
+      }
+    };
   } catch (error) {
-    return { valid: false, error: error.message };
+    return {
+      valid: false,
+      error: error.message
+    };
   }
 }
 
