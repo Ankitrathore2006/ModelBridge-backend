@@ -93,20 +93,27 @@ export const checkAuth = (req, res) => {
   }
 };
 
+// ============================
+// Admin Signup
+// ============================
 export const adminSignup = async (req, res) => {
   const { fullName, email, password } = req.body;
+
   try {
     if (!fullName || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters" });
     }
 
-    const user = await User.findOne({ email });
-
-    if (user) return res.status(400).json({ message: "Email already exists" });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -115,34 +122,34 @@ export const adminSignup = async (req, res) => {
       fullName,
       email,
       password: hashedPassword,
-      role: "admin",
+      role: "admin", 
     });
 
-    if (newUser) {
-      // generate jwt token here
-      generateToken(newUser._id, res);
-      await newUser.save();
+    await newUser.save();
 
-      res.status(201).json({
-        _id: newUser._id,
-        fullName: newUser.fullName,
-        email: newUser.email,
-        role: newUser.role,
-      });
-    } else {
-      res.status(400).json({ message: "Invalid user data" });
-    }
+    // generate jwt token after saving
+    generateToken(newUser._id, res);
+
+    res.status(201).json({
+      _id: newUser._id,
+      fullName: newUser.fullName,
+      email: newUser.email,
+      role: newUser.role,
+    });
   } catch (error) {
-    console.log("Error in signup controller", error.message);
+    console.error("Error in adminSignup:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
+// ============================
+// Admin Login
+// ============================
 export const adminLogin = async (req, res) => {
   const { email, password } = req.body;
-  try {
-    const user = await User.findOne({ email , role: "admin" });
 
+  try {
+    const user = await User.findOne({ email, role: "admin" });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -161,27 +168,36 @@ export const adminLogin = async (req, res) => {
       role: user.role,
     });
   } catch (error) {
-    console.log("Error in login controller", error.message);
+    console.error("Error in adminLogin:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
+// ============================
+// Admin Logout
+// ============================
 export const adminLogout = (req, res) => {
   try {
-    res.cookie("jwt", "", { maxAge: 0 });
+    res.cookie("jwt", "", { httpOnly: true, expires: new Date(0) }); // safer
     res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
-    console.log("Error in logout controller", error.message);
+    console.error("Error in adminLogout:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-
+// ============================
+// Check Auth (for Admin)
+// ============================
 export const checkAuthAdmin = (req, res) => {
   try {
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
     res.status(200).json(req.user);
   } catch (error) {
-    console.log("Error in checkAuth controller", error.message);
+    console.error("Error in checkAuthAdmin:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };

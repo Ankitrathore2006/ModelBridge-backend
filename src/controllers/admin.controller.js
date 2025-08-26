@@ -53,6 +53,21 @@ export const deleteAdmin = async (req, res) => {
   }
 };
 
+export const getAllApiKeys = async (req, res) => {
+    try {
+       
+            const apiKeys = await ApiKey.find({ createdBy: userId });
+
+  
+      if (!apiKeys || apiKeys.length === 0) {
+        return res.status(404).json({ message: "No API keys found for this user" });
+      }
+  
+      res.status(200).json(apiKeys);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching API keys", error });
+    }
+  };
 export const getApiKeys = async (req, res) => {
     try {
        
